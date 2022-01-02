@@ -1,0 +1,77 @@
+/* To calculate the goal avg per match we should calculate the sum of goals score home + away as well as sum matches played home + away */
+
+/* The formula is TOTAL_GOALS_SCORED / TOTAL MATCHES PLAYED */
+
+/* The way i calculated the most common match result is to concatinate the 2 home - away scores, grouping the results , order them by DESC and i took the first element */
+
+/* The most common score is 1-1 11.64% 1-0 9.70% */ 
+
+
+/* a view to group only the needed data */
+
+CREATE VIEW football as
+select s.season, m.competition, v.name, v.venueid, v.location, 
+m.competitionId, m.period, m.date, m.round, m.matchid, m.type,  m.hometeamid,
+m.homename, m.homehalfTimeScore, m.homescore, m.awayscore,
+m.awayhalfTimeScore, m.awayname, m.minute, m.awayteamid
+from match m
+JOIN season s USING(seasonid)
+JOIN venue v USING(venueid)
+
+/*AS SQLITE no longuer supports STORED programs i created tables to store some results*/
+
+/* TABLE MUST BE TEMP  */
+
+/* table contain the played home matches */
+CREATE TABLE "match_home" ("hometeamid" TEXT, "homename" TEXT, "played_match_home" INT);
+
+
+INSERT INTO match_home select hometeamid ,homename, count(*) as played_match_home from football GROUP By homename ;
+
+/* table contain the played away matches */
+CREATE TABLE "match_away" ("awayteamid" TEXT, "awayname" TEXT, "played_match_away" INT);
+
+INSERT INTO match_away select awayteamid ,awayname, count(*) as played_match_home from football GROUP By awayname;
+
+/*TABLE TO STORE TOTAL PLAYED MATCHES*/
+CREATE TABLE TOTAL_PLAYED_MATCH (TEAM_NAME TEXT, TEAM_ID TEXT, PLAYED_MATCH INT);
+
+INSERT INTO TOTAL_PLAYED_MATCH SELECT t1.homename as team_name, t1.hometeamid as team_id, t1.played_match_home + t2.played_match_away as total_played_match from match_home t1 JOIN match_away t2 ON t1.hometeamid = t2.awayteamid;
+
+/*STORES SCORED GOALS AWAY */
+create table scored_away (awayname TEXT, scored_goals INT);
+
+INSERT into scored_away SELECT awayname, sum(awayscore) as scored_goal_away from football GROUP by awayname;
+
+/*STORES SCORED GOALS HOME */
+create table scored_home (homename TEXT, scored_goals INT);
+
+INSERT INTO scored_home SELECT homename, sum(homescore) as scored_goal_home from football GROUP by homename;
+
+/* THE RTOTAL SCORED GOALS HOME + AWAY */
+CREATE table TOTAL_SCORED_GOAL (TEAM_NAME text , SCORED_GOALS INT);
+
+INSERT INTO TOTAL_SCORED_GOAL SELECT t1.homename as TEAM_NAME, t1.scored_goals + t2.scored_goals as total_goal_scored from scored_home t1 JOIN scored_away t2 on t1.homename = t2.awayname;
+
+/* CALCULATE THE AVG_GOALS */
+
+CREATE TABLE AVG_GOALS (TEAM_NAME TEXT, TEAM_ID TEXT, PLAYED_MATCH INT, scored_goals int, avarage_goal_per_match REAL);
+
+INSERT into AVG_GOALS SELECT t1.TEAM_NAME, t1.TEAM_ID, t1.PLAYED_MATCH, t2.SCORED_GOALS, ROUND(CAST((t2.SCORED_GOALS) as REAL) / (t1.PLAYED_MATCH),2) as AVARAGE_GOAL_PER_MATCH FROM TOTAL_PLAYED_MATCH t1 JOIN TOTAL_SCORED_GOAL t2 USING(TEAM_NAME);
+
+/* SCORE TOGETHER */
+CREATE table score (matchid TEXT, homename TEXT, homescore INT, awayscore INT, awayname TEXT, score_final TEXT, venueid int);
+INSERT into score SELECT matchid, homename, homescore, awayscore, awayname, homescore || " - " || awayscore, venueid as score_match from football ORDER by score_match;
+
+SELECT score_final, count(*) as total_comon_score FROM score GROUP by score_final ORDER by total_comon_score DESC LIMIT 1; 
+
+/* the venue with the max number of goals by season */
+CREATE table total_goals_venue ( venueid int , venue_name TEXT , total_goal_scored int) 
+
+INSERT into total_goals_venue SELECT venueid , name , homescore + awayscore as number_goals from football
+
+SELECT venue_name, sum(total_goal_scored) as goals_scored_invenue_season from total_goals_venue GROUP by venue_name ORDER by goals_scored_invenue_season DESC LIMIT 1
+
+/* or we can store it and get the MAX(goals_scored_invenue_season) */
+/*the result is : St. Andrew's Trillion Trophy Stadium 107 */
+/* the last question is the results of the table i have already created TOTAL_PLAYED_MATCH , TOTAL_SCORED_GOAL and using when case to calculate the points the sum by grouping by team 
