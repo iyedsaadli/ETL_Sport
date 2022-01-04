@@ -2,10 +2,10 @@ import requests
 import json
 from db import Soccer
 
-league_id_1 = 'https://feeds.incrowdsports.com/provider/opta/football/v1/matches?compId=8&season=2020'
-league_id_2 = 'https://feeds.incrowdsports.com/provider/opta/football/v1/matches?compId=9&season=2020'
-league_id_3 = 'https://feeds.incrowdsports.com/provider/opta/football/v1/matches?compId=10&season=2020'
-league_id_4 = 'https://feeds.incrowdsports.com/provider/opta/football/v1/matches?compId=11&season=2020'
+league_id_1 = '**************************link******************************'
+league_id_2 = '**************************link******************************'
+league_id_3 = '**************************link******************************'
+league_id_4 = '**************************link******************************'
 
 links = [league_id_1, league_id_2, league_id_3, league_id_4]
 
