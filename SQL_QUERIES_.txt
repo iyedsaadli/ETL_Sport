@@ -4,8 +4,6 @@
 
 /* The way i calculated the most common match result is to concatinate the 2 home - away scores, grouping the results , order them by DESC and i took the first element */
 
-/* The most common score is 1-1 11.64% 1-0 9.70% */ 
-
 
 /* a view to group only the needed data */
 
@@ -72,6 +70,3 @@ INSERT into total_goals_venue SELECT venueid , name , homescore + awayscore as n
 
 SELECT venue_name, sum(total_goal_scored) as goals_scored_invenue_season from total_goals_venue GROUP by venue_name ORDER by goals_scored_invenue_season DESC LIMIT 1
 
-/* or we can store it and get the MAX(goals_scored_invenue_season) */
-/*the result is : St. Andrew's Trillion Trophy Stadium 107 */
-/* the last question is the results of the table i have already created TOTAL_PLAYED_MATCH , TOTAL_SCORED_GOAL and using when case to calculate the points the sum by grouping by team 
